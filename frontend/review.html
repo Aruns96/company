@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .rating {
+        unicode-bidi: bidi-override;
+        direction: rtl;
+    }
+
+    .rating > span {
+        display: inline-block;
+        position: relative;
+        width: 1.1em;
+        font-size: 30px;
+    }
+
+    .rating > span:before {
+        content: "\2605";
+        position: absolute;
+        color: #ccc;
+    }
+
+    .rating > span:hover:before,
+    .rating > span:hover ~ span:before {
+        content: "\2605";
+        color: #FFD700;
+    }
+
+    .rating > span:hover ~ span:before {
+        content: "\2606";
+    }
+
+    .rated {
+        color: #FFD700;
+    }
+    .p{
+        display: inline-block;
+    }
+    
+</style>
+</head>
+<body>
+    <h1>Add a Review</h1>
+<form onsubmit="saveToLocal(event)" >
+  <label for="name">Company Name</label>
+  <input  type="text" id="name" name="name">
+  <br>
+  <label  for="pros">Pros</label>
+  <input  type="text" id ="pros"name="pros">
+  <br>
+  <label   for="cons">Cons</label>
+  <input  type="text" id="cons" name="cons">
+  <br>
+  <label  for="rating">Rating</label>
+  <div class="rating" id="stars">
+    <span data-value="5"></span>
+    <span data-value="4"></span>
+    <span data-value="3"></span>
+    <span data-value="2"></span>
+    <span data-value="1"></span>
+</div>
+<p class="p">Rating: <span name="ratingValue" id="ratingValue">0</span>  stars</p>
+  <br>
+  <button class="btn btn-warning" >submit </button>
+</form>
+<br>
+ <form onsubmit="getRating(event)">
+    <label for="search">Search</label>
+    <input type="text" id="search" name="search">
+    <button >Search </button>
+ </form>
+<h2>Reviews</h2>
+<div id="Items" >
+  
+</div>
+
+
+
+ 
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+
+ <script>
+    const stars = document.querySelectorAll(".rating > span");
+    const ratingValue = document.getElementById("ratingValue");
+
+    stars.forEach((star) => {
+        star.addEventListener("click", () => {
+            const value = star.getAttribute("data-value");
+            ratingValue.textContent = value;
+            stars.forEach((s) => s.classList.remove("rated"));
+            star.classList.add("rated");
+        });
+    });
+</script>
+ <script >
+   function saveToLocal(event){
+    event.preventDefault();
+    const name = event.target.name.value;
+    const pros = event.target.pros.value;
+    const cons = event.target.cons.value;
+    const ratingValue = document.getElementById("ratingValue").innerText
+   
+
+
+   const obj = {
+    name,
+    pros,
+    cons,
+    ratingValue
+   }
+  
+    
+    axios.post("http://localhost:3000/review/add-review" ,obj)
+    .then(res =>{
+        console.log(res);
+        //showItems(res.data.newPlayerData);
+
+    })
+    .catch(e => {
+        console.log(e)
+        document.body.innerHTML=document.body.innerHTML + "<h3>error occured</h3>"
+    })
+    event.target.name.value = "";
+     event.target.pros.value= "";
+     event.target.cons.value= "";
+     //event.target.ratingValue.value= 0;
+     document.getElementById("ratingValue").innerText = 0;
+
+
+   }
+
+   function getRating(event) {
+    event.preventDefault();
+     const cName = document.getElementById("search").value;
+    
+
+    axios.post("http://localhost:3000/review/get-review",{cName}).then(res =>{
+           //console.log(res.data.playerData[0]);
+
+            showItems(res.data.ratingData);
+            console.log(res.data.ratingData);
+           
+           
+        })
+        .catch(e=>console.log(e))
+        document.getElementById("search").value = "";
+   }
+
+
+   function showItems(rating){
+
+   if(rating[0]===undefined){
+    alert("rating data not avialble");
+   }
+   console.log(rating[0])
+    const parentNode = document.getElementById("Items");
+    let childHTML1=document.createElement("div");
+    
+    let sum =0 ;
+    for(let i=0;i<rating.length;i++){
+        sum = sum + Number(rating[i].ratingValue) 
+    }
+    let avg = sum/rating.length
+     let labelname = document.createElement("label");
+    labelname.innerText = "Company Name :";
+    let s = document.createElement("br");
+    let labelvalue = document.createElement("label");
+    labelvalue.innerText = rating[0].name;
+    childHTML1.appendChild(labelname);
+    childHTML1.appendChild(s);
+    childHTML1.appendChild(labelvalue);
+   
+    let s3 = document.createElement("br");
+    childHTML1.appendChild(s3);
+
+    let labelname2 = document.createElement("label");
+    labelname2.innerText = "Company Rating :";
+    let s2 = document.createElement("br");
+    let labelvalue2 = document.createElement("label");
+    labelvalue2.innerText = avg;
+    childHTML1.appendChild(labelname2);
+    childHTML1.appendChild(s2);
+    childHTML1.appendChild(labelvalue2); 
+
+  //  childHTML1.innerHTML =  `<div >company name:${rating[0].name}  company rating:${avg}</div>`
+    parentNode.appendChild(childHTML1);
+    for(let i=0;i<rating.length;i++){
+        let childHTML2 = document.createElement("div");
+        childHTML2.innerHTML =  `<div >Pros:${rating[i].pros}  ---  Cons:${rating[i].cons} --- Rating:${rating[i].ratingValue}</div>`;
+        let lbreak = document.createElement("hr");
+        childHTML2.appendChild(lbreak);
+        parentNode.appendChild(childHTML2);
+        
+    }
+    //childHTML2.innerHTML =  `<div >${rating.name}--${rating.pros}--${rating.cons}--${rating.ratingValue}</div>`
+    // let form = document.createElement("form");
+    // let labelname = document.createElement("label");
+    // labelname.innerText = "Name";
+    // let labelvalue = document.createElement("label");
+    // labelvalue.innerText = player.name;
+    // form.appendChild(labelname);
+    // form.appendChild(labelvalue);
+
+    
+    
+    
+    
+    
+
+   }
+//    function editUser(player){
+    
+//     console.log(player)
+//     const {id,name,date,birth,photo,matches,runs,wickets} = player
+//     document.getElementById("name").value = name;
+//     document.getElementById("date").value = date;
+//     document.getElementById("birth").value = birth;
+//     document.getElementById("photo").value = photo;
+//     document.getElementById("matches").value = matches;
+//     document.getElementById("runs").value = runs;
+//     document.getElementById("wickets").value = wickets;
+//     removeUser(id);
+
+//     axios.delete(`http://localhost:3000/player/edit-data/${id}`).then(res=>{
+       
+      
+//     }).catch(e=>console.log(e));
+//    }
+
+//    function removeUser(playerId){
+    
+//     const nodeToDelete = document.getElementById(playerId);
+    
+    
+//     nodeToDelete.remove();
+    
+
+//    }
+
+ </script> 
+</body>
+</html>
